@@ -1,5 +1,5 @@
 import { IExercise } from "../IExercise";
-import inputMasses from "./input";
+import getInputMasses from "./input";
 
 export class Exercise20191201 implements IExercise {
   private masses: Array<number>;
@@ -7,7 +7,7 @@ export class Exercise20191201 implements IExercise {
   date: string;
 
   constructor() {
-    this.masses = inputMasses;
+    this.masses = getInputMasses();
     this.date = "01/12/2019";
   }
 
