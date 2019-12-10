@@ -7,15 +7,15 @@ const exercises: Array<IExercise> = new Array<IExercise>();
 exercises.push(new Exercise20191201());
 
 let log: string = "";
-for (let i = 0; i < exercises.length; ++i) {
+for (let i: number = 0; i < exercises.length; ++i) {
   const exercise: IExercise = exercises[i];
   log =
     log +
     `
-  <h1>Exercise ${exercise.date} !</h1>
-  <div>
-    The results you've all been waiting for is ${exercise.getResult1()} and ${exercise.getResult2()}.
-  </div>
-  `;
+    <h1>Exercise ${exercise.date} !</h1>
+    <div>
+      The results you've all been waiting for are ${exercise.getResult1()} and ${exercise.getResult2()}.
+    </div>
+    `;
 }
 document.getElementById("app").innerHTML = log;

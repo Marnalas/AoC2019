@@ -111,7 +111,7 @@ export class Exercise20191201 implements IExercise {
     this.date = "01/12/2019";
   }
 
-  private calculeFuel(masse: number): number {
+  private calculateFuel(masse: number): number {
     let fuel: number = Math.floor(masse / 3) - 2;
     return fuel > 0 ? fuel : 0;
   }
@@ -125,10 +125,10 @@ export class Exercise20191201 implements IExercise {
 
   getResult2(): string {
     let sum: number = 0;
-    for (let i = 0; i < this.masses.length; ++i) {
+    for (let i: number = 0; i < this.masses.length; ++i) {
       let masse = this.masses[i];
       do {
-        masse = this.calculeFuel(masse);
+        masse = this.calculateFuel(masse);
         sum += masse;
       } while (masse !== 0);
     }
