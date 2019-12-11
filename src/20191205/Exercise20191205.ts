@@ -81,9 +81,9 @@ export class Exercise20191205 implements IExercise {
         let partialOutput: string = this.opcodes[position].toString();
         output += `,${partialOutput}`;
 
-        console.log(
-          `${i}/${this.opcodes.length} ${opcode} ${position} ${partialOutput}`
-        );
+        // console.log(
+        //   `${i}/${this.opcodes.length} ${opcode} ${position} ${partialOutput}`
+        // );
         i += 2;
       } else break;
     } while (i < this.opcodes.length);
