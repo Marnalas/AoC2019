@@ -1,19 +1,25 @@
 import { IExercise } from "../IExercise";
 import getInputWiresDirections, { WiresDirections } from "./input";
 
-type Position = {
+type Point = {
   x: number;
   y: number;
 };
 
-type Intersection = {
-  distance: number;
+enum Position {
+  Vertical,
+  Horizontal
+}
+
+type Line = {
   position: Position;
+  start: Point;
+  end: Point;
 };
 
-type ProcessedIntersections = {
-  closestIntersection: Intersection;
-  intersections: Array<Intersection>;
+type Intersection = {
+  distance: number;
+  point: Point;
 };
 
 export class Exercise20191203 implements IExercise {
@@ -26,8 +32,8 @@ export class Exercise20191203 implements IExercise {
     this.date = "03/12/2019";
   }
 
-  private getPositions(directions: Array<string>): Array<Position> {
-    const positions: Array<Position> = new Array<Position>();
+  private getLines(directions: Array<string>): Array<Line> {
+    const lines: Array<Line> = new Array<Line>();
 
     let currentX: number = 0,
       currentY: number = 0,
@@ -36,66 +42,143 @@ export class Exercise20191203 implements IExercise {
     for (let i = 0; i < directions.length; ++i) {
       direction = directions[i].substring(0, 1);
       distance = +directions[i].substring(1, directions[i].length);
-      // console.log(`${directions[i]} ${direction} ${distance}`);
-      if (direction === "R" || direction === "L") {
-        for (let j = 0; j < distance; ++j) {
-          currentX += direction === "R" ? 1 : -1;
-          // console.log(`${currentX} ${currentY}`);
-          positions.push({ x: currentX, y: currentY });
-        }
-      } else {
-        for (let j = 0; j < distance; ++j) {
-          currentY += direction === "U" ? 1 : -1;
-          // console.log(`${currentX} ${currentY}`);
-          positions.push({ x: currentX, y: currentY });
-        }
-      }
+      const line: Line = {
+        position: null,
+        start: { x: currentX, y: currentY },
+        end: null
+      };
+      if (direction === "R" || direction === "L")
+        currentX += direction === "R" ? distance : -distance;
+      else currentY += direction === "U" ? distance : -distance;
+      line.end = { x: currentX, y: currentY };
+      line.position =
+        line.start.x === line.end.x ? Position.Vertical : Position.Horizontal;
+      lines.push(line);
     }
 
-    return positions;
+    return lines;
   }
 
-  private getProcessedIntersections(
-    positionsWire1: Array<Position>,
-    positionsWire2: Array<Position>
-  ): ProcessedIntersections {
-    const intersections: Array<Intersection> = new Array<Intersection>();
-    let closestIntersection: Intersection = {
-      distance: Number.MAX_VALUE,
-      position: null
-    };
+  private getIntersectionFromHorizontalAndVerticalLines(
+    horizontalLine: Line,
+    verticalLine: Line
+  ): Intersection {
+    return (verticalLine.start.x !== 0 ||
+      verticalLine.start.y !== 0 ||
+      horizontalLine.start.x !== 0 ||
+      horizontalLine.start.y !== 0) &&
+      verticalLine.start.x >=
+        Math.min(horizontalLine.start.x, horizontalLine.end.x) &&
+      verticalLine.start.x <=
+        Math.max(horizontalLine.start.x, horizontalLine.end.x) &&
+      horizontalLine.start.y >=
+        Math.min(verticalLine.start.y, verticalLine.end.y) &&
+      horizontalLine.start.y <=
+        Math.max(verticalLine.start.y, verticalLine.end.y)
+      ? {
+          distance:
+            Math.abs(verticalLine.start.x) + Math.abs(horizontalLine.start.y),
+          point: { x: verticalLine.start.x, y: horizontalLine.start.y }
+        }
+      : {
+          distance: Number.MAX_SAFE_INTEGER,
+          point: null
+        };
+  }
 
-    for (let i = 0; i < positionsWire1.length; ++i) {
-      for (let j = 0; j < positionsWire2.length; ++j) {
+  private getClosestIntersection(
+    linesWire1: Array<Line>,
+    linesWire2: Array<Line>
+  ): Intersection {
+    let closestIntersection: Intersection = {
+        distance: Number.MAX_SAFE_INTEGER,
+        point: null
+      },
+      intersection: Intersection = {
+        distance: Number.MAX_SAFE_INTEGER,
+        point: null
+      };
+
+    let line1: Line, line2: Line;
+    for (let i = 0; i < linesWire1.length; ++i) {
+      line1 = linesWire1[i];
+      for (let j = 0; j < linesWire2.length; ++j) {
+        line2 = linesWire2[j];
         if (
-          positionsWire1[i].x === positionsWire2[j].x &&
-          positionsWire1[i].y === positionsWire2[j].y
-        ) {
-          const intersection: Intersection = {
-            distance:
-              Math.abs(positionsWire1[i].x) + Math.abs(positionsWire1[i].y),
-            position: positionsWire1[i]
+          (line1.position === Position.Vertical &&
+            line2.position === Position.Horizontal) ||
+          (line1.position === Position.Horizontal &&
+            line2.position === Position.Vertical)
+        )
+          intersection = this.getIntersectionFromHorizontalAndVerticalLines(
+            line1.position === Position.Horizontal ? line1 : line2,
+            line1.position === Position.Vertical ? line1 : line2
+          );
+        else if (
+          ((line1.start.x !== 0 ||
+            line1.start.y !== 0 ||
+            line2.start.x !== 0 ||
+            line2.start.y !== 0) &&
+            (line1.position === Position.Horizontal &&
+              line2.position === Position.Horizontal &&
+              line1.start.y === line2.start.y)) ||
+          (line1.position === Position.Vertical &&
+            line2.position === Position.Vertical &&
+            line1.start.x === line2.start.x)
+        )
+          intersection =
+            line1.position === Position.Horizontal
+              ? {
+                  distance:
+                    Math.max(Math.abs(line1.start.x), Math.abs(line2.start.x)) +
+                    Math.abs(line1.start.y),
+                  point: {
+                    x: Math.max(line1.start.x, line2.start.x),
+                    y: line1.start.y
+                  }
+                }
+              : {
+                  distance:
+                    Math.abs(line1.start.x) +
+                    Math.max(Math.abs(line1.start.y), Math.abs(line2.start.y)),
+                  point: {
+                    x: line1.start.x,
+                    y: Math.max(line1.start.y, line2.start.y)
+                  }
+                };
+        else
+          intersection = {
+            distance: Number.MAX_SAFE_INTEGER,
+            point: null
           };
-          intersections.push(intersection);
-          if (intersection.distance < closestIntersection.distance)
-            closestIntersection = intersection;
+        if (intersection.distance < closestIntersection.distance) {
+          closestIntersection = intersection;
+          // console.debug(
+          //   `${line1.position === Position.Vertical ? "v" : "h"} ${
+          //     line1.start.x
+          //   }:${line1.start.y} ${line1.end.x}:${line1.end.y} ${
+          //     line2.position === Position.Vertical ? "v" : "h"
+          //   } ${line2.start.x}:${line2.start.y} ${line2.end.x}:${line2.end.y}`
+          // );
+          // console.debug(
+          //   `${closestIntersection.distance} ${closestIntersection.point.x}:${
+          //     closestIntersection.point.y
+          //   }`
+          // );
         }
       }
     }
 
-    return {
-      closestIntersection: closestIntersection,
-      intersections: intersections
-    };
+    return closestIntersection;
   }
 
   getResult1(): string {
-    const processedIntersections: ProcessedIntersections = this.getProcessedIntersections(
-      this.getPositions(this.wiresDirections.wire1),
-      this.getPositions(this.wiresDirections.wire2)
+    const closestIntersection: Intersection = this.getClosestIntersection(
+      this.getLines(this.wiresDirections.wire1),
+      this.getLines(this.wiresDirections.wire2)
     );
 
-    return processedIntersections.closestIntersection.distance.toString();
+    return closestIntersection.distance.toString();
   }
 
   getResult2(): string {
