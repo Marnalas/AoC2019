@@ -2,6 +2,35 @@ import { IExercise } from "../IExercise";
 import { Debugger } from "../Debugger";
 import getInputOpcodes from "./input";
 
+enum OpcodesEnum {
+  Add = 1,
+  Mult = 2,
+  Input = 3,
+  Output = 4,
+  JumpIf = 5,
+  JumpIfNot = 6,
+  LessThan = 7,
+  Equal = 8,
+  Finish = 99
+}
+
+type OpcodeDetail = {
+  type: OpcodesEnum;
+  size: number;
+};
+
+const opcodesMap: Map<OpcodesEnum, OpcodeDetail> = new Map([
+  [OpcodesEnum.Add, { type: OpcodesEnum.Add, size: 4 }],
+  [OpcodesEnum.Mult, { type: OpcodesEnum.Mult, size: 4 }],
+  [OpcodesEnum.Input, { type: OpcodesEnum.Input, size: 2 }],
+  [OpcodesEnum.Output, { type: OpcodesEnum.Output, size: 2 }],
+  [OpcodesEnum.JumpIf, { type: OpcodesEnum.JumpIf, size: 3 }],
+  [OpcodesEnum.JumpIfNot, { type: OpcodesEnum.JumpIfNot, size: 3 }],
+  [OpcodesEnum.LessThan, { type: OpcodesEnum.LessThan, size: 4 }],
+  [OpcodesEnum.Equal, { type: OpcodesEnum.Equal, size: 4 }],
+  [OpcodesEnum.Finish, { type: OpcodesEnum.Finish, size: 0 }]
+]);
+
 export class Exercise20191205 implements IExercise {
   private opcodes: Array<number>;
   private debugger: Debugger;
@@ -26,16 +55,21 @@ export class Exercise20191205 implements IExercise {
         : valueStr.length === 1 && startIndex === 0
         ? +valueStr
         : 0;
-    // this.debugger.debug(
-    //   `${valueStr} ${valueStr.length} ${valueStr.length -
-    //     1 -
-    //     endIndex} ${valueStr.length - startIndex} ${value}`
-    // );
     return value;
   }
 
-  private getOpcode(value: string): number {
-    return this.getValueComponent(value, 0, 1);
+  private getOpcode(value: string): OpcodeDetail {
+    let opcodedetail: OpcodeDetail;
+    try {
+      opcodedetail = opcodesMap.get(this.getValueComponent(value, 0, 1));
+    } catch {
+      this.debugger.debug(
+        `${value} ${this.getValueComponent(value, 0, 1)} ${opcodesMap.get(
+          this.getValueComponent(value, 0, 1)
+        )}`
+      );
+    }
+    return opcodedetail;
   }
 
   private getParameterMode(value: string, parameterRank: number): number {
@@ -47,11 +81,11 @@ export class Exercise20191205 implements IExercise {
 
     let i: number = 0;
     let opcodeStr: string;
-    let opcode: number;
+    let opcode: OpcodeDetail;
     do {
       opcodeStr = this.opcodes[i].toString();
       opcode = this.getOpcode(opcodeStr);
-      if (opcode === 1 || opcode === 2) {
+      if (opcode.type === OpcodesEnum.Add || opcode.type === OpcodesEnum.Mult) {
         let firstValue: number =
           this.getParameterMode(opcodeStr, 1) !== 0
             ? this.opcodes[i + 1]
@@ -65,15 +99,17 @@ export class Exercise20191205 implements IExercise {
             ? i + 3
             : this.opcodes[i + 3];
         this.opcodes[position] =
-          opcode === 1 ? firstValue + secondValue : firstValue * secondValue;
+          opcode.type === OpcodesEnum.Add
+            ? firstValue + secondValue
+            : firstValue * secondValue;
 
         this.debugger.debug(
           `${i}/${this.opcodes.length} ${opcodeStr} ${firstValue} ${
-            opcode === 1 ? "+" : "x"
+            opcode.type === OpcodesEnum.Add ? "+" : "x"
           } ${secondValue} = ${this.opcodes[position]} at ${position}`
         );
-        i += 4;
-      } else if (opcode === 3) {
+        i += opcode.size;
+      } else if (opcode.type === OpcodesEnum.Input) {
         let position: number =
           this.getParameterMode(opcodeStr, 1) !== 0
             ? i + 1
@@ -87,8 +123,8 @@ export class Exercise20191205 implements IExercise {
             this.opcodes[position]
           }`
         );
-        i += 2;
-      } else if (opcode === 4) {
+        i += opcode.size;
+      } else if (opcode.type === OpcodesEnum.Output) {
         let position: number =
           this.getParameterMode(opcodeStr, 1) !== 0
             ? i + 1
@@ -102,8 +138,11 @@ export class Exercise20191205 implements IExercise {
         let partialOutput: string = this.opcodes[position].toString();
         output += `,${partialOutput}`;
 
-        i += 2;
-      } else if (opcode === 5 || opcode === 6) {
+        i += opcode.size;
+      } else if (
+        opcode.type === OpcodesEnum.JumpIf ||
+        opcode.type === OpcodesEnum.JumpIfNot
+      ) {
         let firstValue: number =
           this.getParameterMode(opcodeStr, 1) !== 0
             ? this.opcodes[i + 1]
@@ -116,25 +155,30 @@ export class Exercise20191205 implements IExercise {
         this.debugger.debug(
           `${i}/${
             this.opcodes.length
-          } ${opcodeStr} ${firstValue} ${(firstValue !== 0 && opcode === 5) ||
-            (firstValue === 0 && opcode === 6)} ${this.getParameterMode(
+          } ${opcodeStr} ${firstValue} ${(firstValue !== 0 &&
+            opcode.type === OpcodesEnum.JumpIf) ||
+            (firstValue === 0 &&
+              opcode.type === OpcodesEnum.JumpIfNot)} ${this.getParameterMode(
             opcodeStr,
             2
           )}?${this.opcodes[i + 2]};${
             this.opcodes[this.opcodes[i + 2]]
           } going to ${
-            (firstValue !== 0 && opcode === 5) ||
-            (firstValue === 0 && opcode === 6)
+            (firstValue !== 0 && opcode.type === OpcodesEnum.JumpIf) ||
+            (firstValue === 0 && opcode.type === OpcodesEnum.JumpIfNot)
               ? this.opcodes[position]
-              : i + 3
+              : i + opcode.size
           }`
         );
         i =
-          (firstValue !== 0 && opcode === 5) ||
-          (firstValue === 0 && opcode === 6)
+          (firstValue !== 0 && opcode.type === OpcodesEnum.JumpIf) ||
+          (firstValue === 0 && opcode.type === OpcodesEnum.JumpIfNot)
             ? this.opcodes[position]
-            : i + 3;
-      } else if (opcode === 7 || opcode === 8) {
+            : i + opcode.size;
+      } else if (
+        opcode.type === OpcodesEnum.LessThan ||
+        opcode.type === OpcodesEnum.Equal
+      ) {
         let firstValue: number =
           this.getParameterMode(opcodeStr, 1) !== 0
             ? this.opcodes[i + 1]
@@ -148,24 +192,28 @@ export class Exercise20191205 implements IExercise {
             ? i + 3
             : this.opcodes[i + 3];
         this.opcodes[position] =
-          (opcode === 7 && firstValue < secondValue) ||
-          (opcode === 8 && firstValue === secondValue)
+          (opcode.type === OpcodesEnum.LessThan && firstValue < secondValue) ||
+          (opcode.type === OpcodesEnum.Equal && firstValue === secondValue)
             ? 1
             : 0;
 
         this.debugger.debug(
           `${i}/${this.opcodes.length} ${opcodeStr} ${firstValue} ${
-            opcode === 7 || opcode === 8 ? "<" : "==="
+            opcode.type === OpcodesEnum.LessThan ||
+            opcode.type === OpcodesEnum.Equal
+              ? "<"
+              : "==="
           } ${secondValue} = ${
-            (opcode === 7 && firstValue < secondValue) ||
-            (opcode === 8 && firstValue === secondValue)
+            (opcode.type === OpcodesEnum.LessThan &&
+              firstValue < secondValue) ||
+            (opcode.type === OpcodesEnum.Equal && firstValue === secondValue)
               ? 1
               : 0
           } ${this.getParameterMode(opcodeStr, 3)}?${this.opcodes[i + 3]};${
             this.opcodes[this.opcodes[i + 3]]
           } at ${position}`
         );
-        i += 4;
+        i += opcode.size;
       } else {
         this.debugger.debug(`${i}/${this.opcodes.length} ${opcodeStr}`);
         break;
