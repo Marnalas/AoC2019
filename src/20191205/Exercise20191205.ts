@@ -1,13 +1,14 @@
 import { IExercise } from "../IExercise";
+import { Debugger } from "../Debugger";
 import getInputOpcodes from "./input";
 
 export class Exercise20191205 implements IExercise {
   private opcodes: Array<number>;
+  private debugger: Debugger;
 
   date: string;
 
   constructor() {
-    this.opcodes = getInputOpcodes();
     this.date = "05/12/2019";
   }
 
@@ -25,7 +26,7 @@ export class Exercise20191205 implements IExercise {
         : valueStr.length === 1 && startIndex === 0
         ? +valueStr
         : 0;
-    // console.log(
+    // this.debugger.debug(
     //   `${valueStr} ${valueStr.length} ${valueStr.length -
     //     1 -
     //     endIndex} ${valueStr.length - startIndex} ${value}`
@@ -41,7 +42,7 @@ export class Exercise20191205 implements IExercise {
     return this.getValueComponent(value, parameterRank + 1, parameterRank + 1);
   }
 
-  private getOutputs(): string {
+  private getOutputs(systemID: number): string {
     let output: string = "";
 
     let i: number = 0;
@@ -50,7 +51,6 @@ export class Exercise20191205 implements IExercise {
     do {
       opcodeStr = this.opcodes[i].toString();
       opcode = this.getOpcode(opcodeStr);
-      // console.log(`${i}/${this.opcodes.length} ${opcodeStr} ${opcode}`);
       if (opcode === 1 || opcode === 2) {
         let firstValue: number =
           this.getParameterMode(opcodeStr, 1) !== 0
@@ -60,43 +60,132 @@ export class Exercise20191205 implements IExercise {
           this.getParameterMode(opcodeStr, 2) !== 0
             ? this.opcodes[i + 2]
             : this.opcodes[this.opcodes[i + 2]];
-        let position: number = this.opcodes[i + 3];
+        let position: number =
+          this.getParameterMode(opcodeStr, 3) !== 0
+            ? i + 3
+            : this.opcodes[i + 3];
         this.opcodes[position] =
           opcode === 1 ? firstValue + secondValue : firstValue * secondValue;
 
-        // console.log(
-        //   `${i}/${
-        //     this.opcodes.length
-        //   } ${opcode} ${firstValue} ${secondValue} ${position}`
-        // );
+        this.debugger.debug(
+          `${i}/${this.opcodes.length} ${opcodeStr} ${firstValue} ${
+            opcode === 1 ? "+" : "x"
+          } ${secondValue} = ${this.opcodes[position]} at ${position}`
+        );
         i += 4;
       } else if (opcode === 3) {
-        let position: number = this.opcodes[i + 1];
-        this.opcodes[position] = 1;
+        let position: number =
+          this.getParameterMode(opcodeStr, 1) !== 0
+            ? i + 1
+            : this.opcodes[i + 1];
+        this.opcodes[position] = systemID;
 
-        // console.log(`${i}/${this.opcodes.length} ${opcode} ${position} 1`);
+        this.debugger.debug(
+          `${i}/${
+            this.opcodes.length
+          } ${opcodeStr} ${systemID} at ${position} which is ${
+            this.opcodes[position]
+          }`
+        );
         i += 2;
       } else if (opcode === 4) {
-        let position: number = this.opcodes[i + 1];
+        let position: number =
+          this.getParameterMode(opcodeStr, 1) !== 0
+            ? i + 1
+            : this.opcodes[i + 1];
+
+        this.debugger.debug(
+          `${i}/${this.opcodes.length} ${opcodeStr} at ${position} which is ${
+            this.opcodes[position]
+          }`
+        );
         let partialOutput: string = this.opcodes[position].toString();
         output += `,${partialOutput}`;
 
-        // console.log(
-        //   `${i}/${this.opcodes.length} ${opcode} ${position} ${partialOutput}`
-        // );
         i += 2;
-      } else break;
+      } else if (opcode === 5 || opcode === 6) {
+        let firstValue: number =
+          this.getParameterMode(opcodeStr, 1) !== 0
+            ? this.opcodes[i + 1]
+            : this.opcodes[this.opcodes[i + 1]];
+        let position: number =
+          this.getParameterMode(opcodeStr, 2) !== 0
+            ? i + 2
+            : this.opcodes[i + 2];
+
+        this.debugger.debug(
+          `${i}/${
+            this.opcodes.length
+          } ${opcodeStr} ${firstValue} ${(firstValue !== 0 && opcode === 5) ||
+            (firstValue === 0 && opcode === 6)} ${this.getParameterMode(
+            opcodeStr,
+            2
+          )}?${this.opcodes[i + 2]};${
+            this.opcodes[this.opcodes[i + 2]]
+          } going to ${
+            (firstValue !== 0 && opcode === 5) ||
+            (firstValue === 0 && opcode === 6)
+              ? this.opcodes[position]
+              : i + 3
+          }`
+        );
+        i =
+          (firstValue !== 0 && opcode === 5) ||
+          (firstValue === 0 && opcode === 6)
+            ? this.opcodes[position]
+            : i + 3;
+      } else if (opcode === 7 || opcode === 8) {
+        let firstValue: number =
+          this.getParameterMode(opcodeStr, 1) !== 0
+            ? this.opcodes[i + 1]
+            : this.opcodes[this.opcodes[i + 1]];
+        let secondValue: number =
+          this.getParameterMode(opcodeStr, 2) !== 0
+            ? this.opcodes[i + 2]
+            : this.opcodes[this.opcodes[i + 2]];
+        let position: number =
+          this.getParameterMode(opcodeStr, 3) !== 0
+            ? i + 3
+            : this.opcodes[i + 3];
+        this.opcodes[position] =
+          (opcode === 7 && firstValue < secondValue) ||
+          (opcode === 8 && firstValue === secondValue)
+            ? 1
+            : 0;
+
+        this.debugger.debug(
+          `${i}/${this.opcodes.length} ${opcodeStr} ${firstValue} ${
+            opcode === 7 || opcode === 8 ? "<" : "==="
+          } ${secondValue} = ${
+            (opcode === 7 && firstValue < secondValue) ||
+            (opcode === 8 && firstValue === secondValue)
+              ? 1
+              : 0
+          } ${this.getParameterMode(opcodeStr, 3)}?${this.opcodes[i + 3]};${
+            this.opcodes[this.opcodes[i + 3]]
+          } at ${position}`
+        );
+        i += 4;
+      } else {
+        this.debugger.debug(`${i}/${this.opcodes.length} ${opcodeStr}`);
+        break;
+      }
     } while (i < this.opcodes.length);
 
     return output;
   }
 
   getResult1(): string {
-    const outputs: Array<string> = this.getOutputs().split(",");
+    this.opcodes = getInputOpcodes();
+    this.debugger = new Debugger(false);
+    const outputs: Array<string> = this.getOutputs(1).split(",");
     return outputs[outputs.length - 1];
   }
 
   getResult2(): string {
-    return "not implemented yet";
+    this.opcodes = getInputOpcodes();
+    this.debugger = new Debugger(false);
+    const outputs: Array<string> = this.getOutputs(5).split(",");
+    return outputs[outputs.length - 1];
   }
 }
