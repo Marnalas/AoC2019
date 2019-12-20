@@ -1,5 +1,5 @@
 import { IExercise } from "../IExercise";
-import getOrbites from "./input";
+import getInputOrbites from "./input";
 import { Debugger } from "../Debugger";
 
 interface SpaceObject {
@@ -38,7 +38,7 @@ export class Exercise20191206 implements IExercise {
   date: string;
 
   constructor() {
-    this.orbites = getOrbites();
+    this.orbites = getInputOrbites();
     this.date = "06/12/2019";
   }
 

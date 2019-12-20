@@ -6,9 +6,11 @@ import { Exercise20191203 } from "./20191203/Exercise20191203";
 import { Exercise20191204 } from "./20191204/Exercise20191204";
 import { Exercise20191205 } from "./20191205/Exercise20191205";
 import { Exercise20191206 } from "./20191206/Exercise20191206";
+import { Exercise20191207 } from "./20191207/Exercise20191207";
 import { IExercise } from "./IExercise";
 
 const exercises: Array<IExercise> = new Array<IExercise>();
+exercises.push(new Exercise20191207());
 exercises.push(new Exercise20191206());
 exercises.push(new Exercise20191205());
 exercises.push(new Exercise20191204()); // Deactivate if infinite loop detection in enabled.
