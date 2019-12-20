@@ -44,9 +44,9 @@ export class Exercise20191206 implements IExercise {
 
   private getSpaceObject(id: string): SpaceObject {
     return (
-      this.spaceObjects.filter(sObj => {
+      this.spaceObjects.find(sObj => {
         return sObj.id === id;
-      })[0] || {
+      }) || {
         id: id,
         orbiting: null,
         orbitedBy: new Array<SpaceObject>(),
@@ -113,9 +113,9 @@ export class Exercise20191206 implements IExercise {
   ): number {
     let newCntOrbites = +actualCntOrbites.toString();
     let isOnSANPath =
-      sObj.orbitedBy.filter(x => {
+      sObj.orbitedBy.find(x => {
         return KnownSpaceObjectTypeEnum[x.id] === KnownSpaceObjectTypeEnum.SAN;
-      })[0] !== undefined;
+      }) !== undefined;
     if (!sObj.cntOrbits || newCntOrbites < sObj.cntOrbits)
       sObj.cntOrbits = actualCntOrbites;
     if (!isOnSANPath) {
